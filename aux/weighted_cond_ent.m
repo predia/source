@@ -1,6 +1,6 @@
-%% CONDITIONAL VARINANCE
+%% CONDITIONAL ENTROPY
 %
-% calculates the average conditional entropy form the given weights
+% version 1 / Jan 15 / AGeiges WNowak
 
 function [h_zlx] = weighted_cond_ent(ctrl, weight_matrix,~,targ_data,delete_name)
 
