@@ -1,13 +1,18 @@
 function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std)
 
-% version 1 / Jan 15 / AGeiges PLeube WNowak
-
+% version 1 / Jan 15 / AGeiges WNowak
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;
 
 if ~strct_flag_check(ctrl,'cal_method')
     ctrl.cal_method = 1;
+end
+
+if ~strct_flag_check(ctrl,'error_marginalizatons')
+    marg_factor = 1;
+else
+    marg_factor = 2;
 end
 
 [n_dim_data, n_mc  ] = size(prior_data);
@@ -23,8 +28,8 @@ end
 
 %% Normalization of data
 for i = 1:n_dim
-    prior_data(i,:) = prior_data(i,:)  ./ obs_err_std(i) ./ sqrt(4);
-    obs_data (i,:)  = obs_data(i,:)    ./ obs_err_std(i) ./ sqrt(4);
+    prior_data(i,:) = prior_data(i,:)  ./ obs_err_std(i) ./ sqrt(2*marg_factor);
+    obs_data (i,:)  = obs_data(i,:)    ./ obs_err_std(i) ./ sqrt(2*marg_factor);
 end
 
 weights     = zeros(n_meas,n_mc);
