@@ -2,7 +2,7 @@ function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, p
 
 % version 1 / Jan 15 / AGeiges WNowak
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;
 
 if ~strct_flag_check(ctrl,'error_marginalizatons')
