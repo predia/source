@@ -16,39 +16,23 @@ end
 
 % calculation in how many parts the calculation needs to be split in order
 % to match the computer memory
-n_split = get_n_split(ctrl, n_mc,n_meas,ctrl.n_para);
-if n_split>1
-    split = fix(n_meas/n_split);
-    part_start(1) = 1;
-    part_end(1)   = split;
-    n_part(1)     = split;
-    for  t = 2:n_split
-        part_start(t) = part_end(t-1)+1;
-        if t == n_split ,
-            part_end(t)   = n_meas;
-        else
-            part_end(t) = part_end(t-1)+split;
-        end;
-        n_part(t) =  part_end(t) - part_start(t) +1;
-    end
-    
-else
-    part_start = 1;
-    part_end   = n_meas;
-end
+[n_split, part_start, part_end, n_part] = get_n_splits(ctrl, n_mc,n_meas,ctrl.n_para);
 
 
+%% Calculation loop
 for t = 1:n_split
     
-    %         prior_data_part = prior_data(:,part_start(t):part_end(t));
-    
-    %     if ctrl.rand_meas
-    %     end
     obs_data_part = obs_data(:,part_start(t):part_end(t));
     
+    % calculation of weighting matrix
     [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
     
-    cond_var(part_start(t):part_end(t)) = weighted_cond_var(ctrl, weights,sumSqrWeights,pred_data,'weights');
+    % calculation of weighted variance
+    cond_var(part_start(t):part_end(t))      = weighted_cond_var(ctrl, weights,sumSqrWeights,pred_data,'weights');
     
 end
 
+if min(ESS) < 100
+    n_crit = sum(ESS < 100);
+    warning(['Effective sample size is ' num2str(n_crit) 'X close to critical value for proper computation of a variance measure'])
+end

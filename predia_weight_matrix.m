@@ -5,10 +5,6 @@ function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, p
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;
 
-if ~strct_flag_check(ctrl,'cal_method')
-    ctrl.cal_method = 1;
-end
-
 if ~strct_flag_check(ctrl,'error_marginalizatons')
     marg_factor = 1;
 else
@@ -39,31 +35,22 @@ ttime(1) = cputime -ttime(1);
 ttime(2)= cputime;
 
 %% ALTERNATIVE CALCULATION 1 (normally fasters)
-if ctrl.cal_method == 1
-    for j=1:n_mc
-        for i=1:n_dim
-            weights(:,j) = weights(:,j) + ((prior_data(i,j)-obs_data(i,:)).^2)';
-        end
-    end
-end
-
-%% ALTERNATIVE CALCULATION 2
-if ctrl.cal_method == 2
+for j=1:n_mc
     for i=1:n_dim
-        weights = weights + ((repmat(prior_data(i,1:n_mc),n_meas,1) - repmat(obs_data(i,:)',1,n_mc)).^2);
+        weights(:,j) = weights(:,j) + ((prior_data(i,j)-obs_data(i,:)).^2)';
     end
 end
 
-%% ALTERNATIVE CALCULATION 3
-if ctrl.cal_method == 3
-    
-    for j=1:num_datas
-        [XMKX1 XMKX2]   = ndgrid(obs_data(j,:),prior_data(j,:));
-        weights         = weights + reshape((XMKX1(:)-XMKX2(:)).^2,n_meas,[]);
-        
-    end
-    
-end
+% %% ALTERNATIVE CALCULATION 2
+% for i=1:n_dim
+%     weights = weights + ((repmat(prior_data(i,1:n_mc),n_meas,1) - repmat(obs_data(i,:)',1,n_mc)).^2);
+% end
+% 
+% %% ALTERNATIVE CALCULATION 3
+% for j=1:n_dim
+%     [XMKX1 XMKX2]   = ndgrid(obs_data(j,:),prior_data(j,:));
+%     weights         = weights + reshape((XMKX1(:)-XMKX2(:)).^2,n_meas,[]);
+% end
 
 %% Singel call of the exponent
 weights   = exp(-weights);
@@ -72,7 +59,7 @@ weights   = exp(-weights);
 ttime(2) = cputime - ttime(2);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% POSTPROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(3)= cputime;
-%% 
+%%
 if isfield(ctrl,'bayes_evidence')
     
     bayes_evidence = weights;
