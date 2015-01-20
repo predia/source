@@ -38,5 +38,6 @@ if n_split>1
 else
     part_start = 1;
     part_end   = n_meas;
+    n_part  = n_meas;
 end
 
