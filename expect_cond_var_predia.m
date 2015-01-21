@@ -1,6 +1,28 @@
-function [cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,pred_err_std)
-
+function [E_cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,pred_err_std)
 % version 1 / Jan 15 / AGeiges WNowak
+
+% Evalulation of the expected conditional variance of the prediction data
+% for prior data given the observation data
+
+% INPUT:            NAME                                        DIMENSION
+% ===================================================================================
+% ctrl              Control structure containing various info   STUCTURE
+%     .n_para       number of parallel computations for         1
+%                   memory management        
+%
+% prior_data        data sample                                 DIM:N_MC
+% obs_data          sample of observations                      DIM:N_MEAS
+% obs_err_std       standart deviation of measurement error     DIM:1
+
+% pred_data         prediction data                             DIM:N_MC
+% pred_err_std      standart deviation of prediction error      DIM:1
+
+% OUTPUT:           NAME                                        DIMENSION
+% ===================================================================================
+% E_cond_var        expected conditional prediction variance    1:N_MEAS
+%                   given the observation data sample
+% ESS               Effective sample size for each condition    1:N_MEAS
+%                   sample (given data)
 
 %% INIT
 [n_dim_data, n_mc  ] = size(prior_data);
@@ -32,6 +54,7 @@ for t = 1:n_split
     
 end
 
+E_cond_var = mean(cond_var);
 if min(ESS) < 100
     n_crit = sum(ESS < 100);
     warning(['Effective sample size is ' num2str(n_crit) 'X close to critical value for proper computation of a variance measure'])

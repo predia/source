@@ -2,7 +2,11 @@ function [cond_var,ESS] = expect_cond_ent_predia(ctrl, prior_data,obs_data, obs_
 
 % version 1 / Jan 15 / AGeiges WNowak
 
+% example file for the evaluation of the expected conditional entropy using
+% the pdf estimation library figtree for one prediction quantity
+
 %% INIT
+
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
 n_eval_pts = 1000;

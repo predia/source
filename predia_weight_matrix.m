@@ -90,7 +90,7 @@ end
 idx_ = true(size(sumSqrWeights));
 idx_(del_idx) = 0;
 AESS = mean(1./sumSqrWeights(idx_));
-ESS =1./sumSqrWeights;
+ESS  = 1./sumSqrWeights';
 
 ttime(3) = cputime - ttime(3);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% END OF FUNCTION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
