@@ -1,13 +1,9 @@
 function [n_split, part_start, part_end, n_part] = get_n_splits(ctrl,n_mc,n_meas,poolsize)
-%& GET_N_SPLIT
 
-%% currently not possible to evlauate poolsize on a worker
-% % Get number of workers
-% poolsize = matlabpool('size');
-% if poolsize == 0
-%     poolsize =1;
-% end
-% Get system memory
+
+%%  FUNCTION 
+%   to estimat how often the weighting file in PREDIA needs to be split in
+%   order to fit in the memory of the local machine
 if ~isfield(ctrl,'sys')
     [~, memory] = system('cat /proc/meminfo | grep MemTotal');
     memory = str2double(memory(14:end-3))*1000; % in bytes

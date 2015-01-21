@@ -1,22 +1,26 @@
 function [E_cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,pred_err_std)
 % version 1 / Jan 15 / AGeiges WNowak
 
+% WRAPPER:
 % Evalulation of the expected conditional variance of the prediction data
 % for prior data given the observation data
 
 % INPUT:            NAME                                        DIMENSION
 % ===================================================================================
 % ctrl              Control structure containing various info   STUCTURE
+%     .err_marg     flag if marginalizing over obs errro        1
+%                   (see Leube et al. 2012, WRR)   
 %     .n_para       number of parallel computations for         1
 %                   memory management        
+%     .sys.memory   memory of the system in in bytes            1
 %
 % prior_data        data sample                                 DIM:N_MC
 % obs_data          sample of observations                      DIM:N_MEAS
 % obs_err_std       standart deviation of measurement error     DIM:1
-
+%
 % pred_data         prediction data                             DIM:N_MC
 % pred_err_std      standart deviation of prediction error      DIM:1
-
+%
 % OUTPUT:           NAME                                        DIMENSION
 % ===================================================================================
 % E_cond_var        expected conditional prediction variance    1:N_MEAS

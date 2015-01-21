@@ -1,11 +1,34 @@
 function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std)
 
-% version 1 / Jan 15 / AGeiges WNowak
+% CORE EVALUATON OF THE WEIGHTING MATRIX
+
+% INPUT:            NAME                                        DIMENSION
+% ===================================================================================
+% ctrl              Control structure containing various info   STUCTURE
+%     .err_marg     flag if marginalizing over obs errro        1
+%                   (see Leube et al. 2012, WRR)   
+% prior_data        data sample                                 DIM:N_MC
+% obs_data          sample of observations                      DIM:N_MEAS
+% obs_err_std       standart deviation of measurement error     DIM:1
+%
+% OUTPUT:           NAME                                        DIMENSION
+% ===================================================================================
+% weights           weighting matrix that contain the           N_MEAS:N_MC
+%                   weights proportinal to the likelyhood of 
+%                   each sample to represent the given obs.
+%                   given the observation data sample
+% AESS              Average effective sample size               1
+% sumSqrWeights     Sum of squared weights for postprocessing   N_MEAS:1
+% ttime             Time vector or init, main calculatio
+%                   and post processing                         1:3
+% ESS               Effective sample size for each condition    1:N_MEAS
+%                   sample (given data)
+
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;
 
-if ~strct_flag_check(ctrl,'error_marginalizatons')
+if strct_flag_check(ctrl,'err_marg')
     marg_factor = 1;
 else
     marg_factor = 2;
@@ -23,9 +46,17 @@ end
 
 
 %% Normalization of data
+
 for i = 1:n_dim
     prior_data(i,:) = prior_data(i,:)  ./ obs_err_std(i) ./ sqrt(2*marg_factor);
     obs_data (i,:)  = obs_data(i,:)    ./ obs_err_std(i) ./ sqrt(2*marg_factor);
+end
+
+if ~strct_flag_check(ctrl,'err_marg')
+    % adding measurement error in the simulated values in case that not
+    % marinalized analytically
+    prior_data = prior_data + randn(size(prior_data));
+    
 end
 
 weights     = zeros(n_meas,n_mc);

@@ -38,7 +38,7 @@ hold on
 scatter3(input(1,:),input(5,:),output,50,output,'filled')
 %% single measurement
 ctrl = [];
-
+ctrl.err_marg = 0;
 for i= 1:10
     [cond_var(i),ESS] = expect_cond_var_predia(ctrl, input(i,:),input(i,1:2000), 0.5,output,0.2);
 end
