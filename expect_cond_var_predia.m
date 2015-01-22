@@ -8,12 +8,13 @@ function [E_cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, ob
 % INPUT:            NAME                                        DIMENSION
 % ===================================================================================
 % ctrl              Control structure containing various info   STUCTURE
-%     .err_marg     flag if marginalizing over obs errro        1
+%     .no_err_marg  flag if marginalizing over obs errro        1
 %                   (see Leube et al. 2012, WRR)   
 %     .n_para       number of parallel computations for         1
 %                   memory management        
 %     .sys.memory   memory of the system in in bytes            1
 %     .warn_ESS     minimal required ESS                        1
+%     .no_warning   do not display convergence warnings         1
 %
 % prior_data        data sample                                 DIM:N_MC
 % obs_data          sample of observations                      DIM:N_MEAS
@@ -63,9 +64,12 @@ for t = 1:n_split
     
 end
 
+cond_var = cond_var(~isnan(cond_var));
 E_cond_var = mean(cond_var);
 
 if min(ESS) < ctrl.warn_ESS
     n_crit = sum(ESS < ctrl.warn_ESS);
-    warning(['Effective sample size is ' num2str(n_crit) 'times lower than ' num2str(ctrl.warn_ESS)])
+    if ~strct_flag_check(ctrl,'no_warning')
+        warning(['ESS lower than ' num2str(ctrl.warn_ESS) ' in ' num2str(n_crit/n_meas*100) '% of obs. realizations'])
+    end
 end

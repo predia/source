@@ -5,7 +5,7 @@ function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, p
 % INPUT:            NAME                                        DIMENSION
 % ===================================================================================
 % ctrl              Control structure containing various info   STUCTURE
-%     .err_marg     flag if marginalizing over obs errro        1
+%     .no_err_marg  flag if marginalizing over obs errro        1
 %                   (see Leube et al. 2012, WRR)   
 % prior_data        data sample                                 DIM:N_MC
 % obs_data          sample of observations                      DIM:N_MEAS
@@ -115,8 +115,10 @@ del_idx = sumSqrWeights> 0.999;
 n_del = sum(del_idx);
 if n_del > 0
     sumSqrWeights(del_idx) = NaN;
-    weights(del_idx,:) = [];
-    disp(['### Warning: ' num2str(n_del) ' Realizations deleted ###'])
+    weights(del_idx,:) = NaN;
+    if ~strct_flag_check(ctrl,'no_warning')
+        warning(['### Warning: ' num2str(n_del) ' measurement realizations deleted ###'])
+    end
 end
 idx_ = true(size(sumSqrWeights));
 idx_(del_idx) = 0;

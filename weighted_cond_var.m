@@ -14,7 +14,11 @@ if exist('delete_name','var')
     assignin('caller', delete_name, []);
 end
 
-sumSqrWeights(isnan(sumSqrWeights)) = [];
+% nan_idx = find(isnan(sumSqrWeights));
+% weight_matrix(nan_idx,:) = [];
+% sumSqrWeights(nan_idx)   = [];
+% sumSqrWeights(isnan(sumSqrWeights)) = [];
+
 if isfield(ctrl,'transposed') && ctrl.transposed
     varout = (1./(1-sumSqrWeights)) .* ( targ_data.^2 * weight_matrix - ( targ_data* weight_matrix).^2) ;
 else
