@@ -13,6 +13,7 @@ function [E_cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, ob
 %     .n_para       number of parallel computations for         1
 %                   memory management        
 %     .sys.memory   memory of the system in in bytes            1
+%     .warn_ESS     minimal required ESS                        1
 %
 % prior_data        data sample                                 DIM:N_MC
 % obs_data          sample of observations                      DIM:N_MEAS
@@ -31,6 +32,10 @@ function [E_cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, ob
 %% INIT
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
+
+if ~isfield(ctrl,'warn_ESS')
+    ctrl.warn_ESS = 50;
+end
 
 if n_dim_data ~= n_dim_obs
     error('Dimension of data disagree')
@@ -59,7 +64,8 @@ for t = 1:n_split
 end
 
 E_cond_var = mean(cond_var);
-if min(ESS) < 100
-    n_crit = sum(ESS < 100);
-    warning(['Effective sample size is ' num2str(n_crit) 'X close to critical value for proper computation of a variance measure'])
+
+if min(ESS) < ctrl.warn_ESS
+    n_crit = sum(ESS < ctrl.warn_ESS);
+    warning(['Effective sample size is ' num2str(n_crit) 'times lower than ' num2str(ctrl.warn_ESS)])
 end

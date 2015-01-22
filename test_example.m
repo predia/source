@@ -5,22 +5,21 @@
 clear all
 n_mc = 30000;
 
-
-%%% SIMPLE NON LINEAR MODEL %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SIMPLE NON LINEAR MODEL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % with relevant parameters 1 and 7
 % other parameter are only pseudo parameter
 % parameter 10 is independent to the output
-
-
 input = randn(1,n_mc);
 %simluation different less dependent input parameter
 for i= 2:9
-    input(i,:) = input(i-1,:) + randn(1,n_mc).* 0.5;
+    input(i,:) = input(i-1,:) + randn(1,n_mc).*0.5;
 end
 input(10,:) =randn(1,n_mc);
 
-output = (input(1,:)+1).^2 - (.5 .* input(7,:) + randn(1,n_mc).* .5).^3 + randn(1,n_mc).* 0.1;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+output = (input(1,:)+1).^2 - (.5 .* input(7,:) + randn(1,n_mc).* .25).^3 + randn(1,n_mc).* 0.2;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     figure(1)
     clf
     hold on
@@ -34,20 +33,32 @@ end
 figure(4)
 clf
 surf(X1,X2,(X1+1).^2 - (.5 .* X2).^3)
+[X,Y,Z] = sphere(10);
+X = X./10;
+Y = Y./10;
+
 hold on
-scatter3(input(1,:),input(5,:),output,50,output,'filled')
+for i = 1:1000
+    surf(input(1,i)+X,input(5,i)+Y,output(i)+Z)
+end
+shading flat
+light
+view(-190,37)
+% scatter3(input(1,:),input(5,:),output,50,output,'filled')
 %% single measurement
 ctrl = [];
-ctrl.err_marg = 0;
+% ctrl.no_err_marg = 0;
 for i= 1:10
     [cond_var(i),ESS] = expect_cond_var_predia(ctrl, input(i,:),input(i,1:2000), 0.5,output,0.2);
 end
-prior_var = var(output)
+prior_var = var(output);
 
 figure(2)
 clf
 plot(prior_var- cond_var)
 ylim([0 5])
+xlabel('given input')
+ylabel('variance reduction')
 legend('one obs.')
 
 %% two measurements
@@ -57,7 +68,6 @@ for i= 1:10
     [cond_var_comb2(i),ESS] = expect_cond_var_predia(ctrl, comb_input ,comb_input(:,1:2000), [0.5; 0.5] ,output,0.2);
 end
 
-%%
 figure(2)
 hold on
 

@@ -28,7 +28,7 @@ function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, p
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;
 
-if strct_flag_check(ctrl,'err_marg')
+if strct_flag_check(ctrl,'no_err_marg')
     marg_factor = 1;
 else
     marg_factor = 2;
@@ -52,7 +52,7 @@ for i = 1:n_dim
     obs_data (i,:)  = obs_data(i,:)    ./ obs_err_std(i) ./ sqrt(2*marg_factor);
 end
 
-if ~strct_flag_check(ctrl,'err_marg')
+if strct_flag_check(ctrl,'no_err_marg')
     % adding measurement error in the simulated values in case that not
     % marinalized analytically
     prior_data = prior_data + randn(size(prior_data));

@@ -1,14 +1,43 @@
 function [cond_var,ESS] = expect_cond_ent_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,pred_err_std)
-
 % version 1 / Jan 15 / AGeiges WNowak
 
-% example file for the evaluation of the expected conditional entropy using
-% the pdf estimation library figtree for one prediction quantity
+% WRAPPER:
+% Evalulation of the expected conditional entropy of the prediction data
+% for prior data given the observation data
+
+% INPUT:            NAME                                        DIMENSION
+% ===================================================================================
+% ctrl              Control structure containing various info   STUCTURE
+%     .err_marg     flag if marginalizing over obs errro        1
+%                   (see Leube et al. 2012, WRR)   
+%     .n_para       number of parallel computations for         1
+%                   memory management        
+%     .sys.memory   memory of the system in in bytes            1
+%     .warn_ESS     minimal required ESS                        1
+%
+% prior_data        data sample                                 DIM:N_MC
+% obs_data          sample of observations                      DIM:N_MEAS
+% obs_err_std       standart deviation of measurement error     DIM:1
+%
+% pred_data         prediction data                             DIM:N_MC
+% pred_err_std      standart deviation of prediction error      DIM:1
+%
+% OUTPUT:           NAME                                        DIMENSION
+% ===================================================================================
+% E_cond_var        expected conditional prediction variance    1:N_MEAS
+%                   given the observation data sample
+% ESS               Effective sample size for each condition    1:N_MEAS
+%                   sample (given data)
 
 %% INIT
 
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
+
+if ~isfield(ctrl,'warn_ESS')
+    ctrl.warn_ESS = 1000;
+end
+
 n_eval_pts = 1000;
 ctrl.n_mc = n_mc;
 
@@ -42,7 +71,7 @@ for t = 1:n_split
     
 end
 
-if min(ESS) < 100
-    n_crit = sum(ESS < 100);
-    warning(['Effective sample size is ' num2str(n_crit) 'X close to critical value for proper computation of a variance measure'])
+if min(ESS) < ctrl.warn_ESS
+    n_crit = sum(ESS < ctrl.warn_ESS);
+    warning(['Effective sample size is ' num2str(n_crit) 'times lower than ' num2str(ctrl.warn_ESS)])
 end
