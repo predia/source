@@ -3,7 +3,7 @@
 % This file show how the internal predia files are used in a test example.
 
 clear all
-n_mc = 30000;
+n_mc = 50000;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SIMPLE NON LINEAR MODEL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -17,6 +17,12 @@ for i= 2:9
 end
 input(10,:) =randn(1,n_mc);
 
+% inputs are observable quanties, for which an measurement error needs to
+% be defined for the latter data worth analysis
+meas_err_std(1:4)  = 0.8
+meas_err_std(5:10) = 0.3
+
+% model prediction
 output = (input(1,:)+1).^2 - (.5 .* input(7,:) + randn(1,n_mc).* .25).^3 + randn(1,n_mc).* 0.2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,24 +54,32 @@ view(-190,37)
 %% single measurement
 ctrl = [];
 % ctrl.no_err_marg = 0;
-for i= 1:10
-    [cond_var(i),ESS] = expect_cond_var_predia(ctrl, input(i,:),input(i,1:2000), 0.5,output,0.2);
-end
+
+
+% Evaluation of the prior variance of the model output
 prior_var = var(output);
 
+% Evaluation of the posterior variance of the model output conditional on the input data 1 to 10
+for i= 1:10
+    [cond_var(i),ESS] = expect_cond_var_predia(ctrl, input(i,:),input(i,1:2000), meas_err_std(i),output);
+end
+
+% Plotting
 figure(2)
-clf
+hold on
 plot(prior_var- cond_var)
 ylim([0 5])
 xlabel('given input')
 ylabel('variance reduction')
 legend('one obs.')
+grid on
 
 %% two measurements
 
+
 for i= 1:10
-    comb_input = [input(1,:) ; input(i,:)]; % fixed first observation
-    [cond_var_comb2(i),ESS] = expect_cond_var_predia(ctrl, comb_input ,comb_input(:,1:2000), [0.5; 0.5] ,output,0.2);
+    comb_input = input([1 i],:);  % fixed first observation in combination of any other observations
+    [cond_var_comb2(i),ESS] = expect_cond_var_predia(ctrl, comb_input ,comb_input(:,1:2000), meas_err_std([1,i]) ,output);
 end
 
 figure(2)

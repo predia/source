@@ -29,11 +29,12 @@ function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, p
 ttime(1)= cputime;
 
 if strct_flag_check(ctrl,'no_err_marg')
-    marg_factor = 1;
+    marg_factor = 1; % no additional smoothing of the likelood function
 else
-    marg_factor = 2;
+    marg_factor = 2; % additional smoothing of the likelood function by factor of 2
 end
 
+% determination of dimension sizes
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
 
@@ -44,9 +45,13 @@ else
     clear n_dim_data n_dim_obs;
 end
 
+weights     = zeros(n_meas,n_mc);
 
-%% Normalization of data
+ttime(1) = cputime -ttime(1);
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% MAIN CALCULATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ttime(2)= cputime;
 
+% Normalization of data with observation errors
 for i = 1:n_dim
     prior_data(i,:) = prior_data(i,:)  ./ obs_err_std(i) ./ sqrt(2*marg_factor);
     obs_data (i,:)  = obs_data(i,:)    ./ obs_err_std(i) ./ sqrt(2*marg_factor);
@@ -59,31 +64,13 @@ if strct_flag_check(ctrl,'no_err_marg')
     
 end
 
-weights     = zeros(n_meas,n_mc);
-
-ttime(1) = cputime -ttime(1);
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%% MAIN CALCULATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-ttime(2)= cputime;
-
-%% ALTERNATIVE CALCULATION 1 (normally fasters)
 for j=1:n_mc
     for i=1:n_dim
         weights(:,j) = weights(:,j) + ((prior_data(i,j)-obs_data(i,:)).^2)';
     end
 end
 
-% %% ALTERNATIVE CALCULATION 2
-% for i=1:n_dim
-%     weights = weights + ((repmat(prior_data(i,1:n_mc),n_meas,1) - repmat(obs_data(i,:)',1,n_mc)).^2);
-% end
-% 
-% %% ALTERNATIVE CALCULATION 3
-% for j=1:n_dim
-%     [XMKX1 XMKX2]   = ndgrid(obs_data(j,:),prior_data(j,:));
-%     weights         = weights + reshape((XMKX1(:)-XMKX2(:)).^2,n_meas,[]);
-% end
-
-%% Singel call of the exponent
+% Singel call of the exponent
 weights   = exp(-weights);
 
 
