@@ -1,4 +1,4 @@
-function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std)
+function [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std)
 
 % CORE EVALUATON OF THE WEIGHTING MATRIX
 
@@ -17,11 +17,11 @@ function [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, p
 %                   weights proportinal to the likelyhood of 
 %                   each sample to represent the given obs.
 %                   given the observation data sample
-% AESS              Average effective sample size               1
+% ESS               Effective sample size for each condition    1:N_MEAS
 % sumSqrWeights     Sum of squared weights for postprocessing   N_MEAS:1
 % ttime             Time vector or init, main calculatio
 %                   and post processing                         1:3
-% ESS               Effective sample size for each condition    1:N_MEAS
+%
 %                   sample (given data)
 
 
@@ -37,6 +37,10 @@ end
 % determination of dimension sizes
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
+
+if strct_flag_check(ctrl,'n_mc')
+   n_mc = ctrl.n_mc;
+end
 
 if n_dim_data ~= n_dim_obs
     error('Dimension of data disagree')
