@@ -64,7 +64,7 @@ for t = 1:n_split
     obs_data_part = obs_data(:,part_start(t):part_end(t));
     
     % calculation of weighting matrix
-    [weights, AESS, sumSqrWeights,ttime,ESS] = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
+    [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
     
     % calculation of weighted variance
     cond_var(part_start(t):part_end(t))      = weighted_cond_ent(ctrl, weights,sumSqrWeights,pred_data_cell,'weights');
