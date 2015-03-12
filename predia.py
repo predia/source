@@ -21,7 +21,7 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
     n_data = np.shape(prior_data);
     n_meas = np.shape(obs_data);
     eps    = np.spacing(1)
-    if ctrl.isfield('debug'):
+    if ctrl.isSetTrue('debug'):
         print n_data
         print n_meas
     
@@ -39,15 +39,25 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
     cond_var = np.zeros(n_meas)
         
     for t in xrange(0,split.n_):
-        print split.part_start[t]
+        #print split.part_start[t]
         obs_data_part = obs_data[:,split.part_start[t]:split.part_end[t]];
         
         # calculation of the weight matrix
         dict_out = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
         
         cond_var[split.part_start[t]:split.part_end[t]] = weighted_cond_var(ctrl, dict_out, pred_data);
+    
+    cond_var = cond_var[~np.isnan(cond_var)];
+    E_cond_var = np.mean(cond_var);
+    
+    if np.min(dict_out['ESS']) < ctrl.warn_ESS:
+        n_crit = np.sum(dict_out['ESS'] < ctrl.warn_ESS)
+        print n_crit
+        print ["shape of n_crit", n_crit]
+        if ~ctrl.isSetTrue('no_warning'):
+            print "ESS lower than ", np.str(ctrl.warn_ESS), " in ", np.str((np.float(n_crit)/np.float(n_meas[1])*100)), "% of obs. realizations"
         
-    return cond_var
+    return E_cond_var
 
 #########################################################################
 # core FUNCITON to calculate the weighting matrxi                       #
@@ -68,7 +78,7 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
         obs_err_std = np.array(obs_err_std)
         obs_err_std.shape = (1,np.size(obs_err_std))
             
-    if not(ctrl.isfield('no_err_marg')):
+    if ctrl.isSetTrue('no_err_marg'):
         marg_factor = 1; # no additional smoothing of the likelood function
     else:
         marg_factor = 2; # additional smoothing of the likelood function by factor of 2
@@ -91,7 +101,7 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     weights = np.zeros((n_meas[1],n_mc))
 
 ########### main calculation ##################
-    if ctrl.isfield('debug'):
+    if ctrl.isSetTrue('debug'):
         print prior_data.shape
         print prior_data.shape
         print [obs_err_std, obs_err_std.shape]
@@ -99,11 +109,12 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     prior_data_norm = np.zeros(np.shape(prior_data))
     obs_data_norm   = np.zeros(np.shape(obs_data))
         
+    # normalization with error standart deviation    
     for i in xrange(0,n_dim):
         prior_data_norm[i,:] = prior_data[i,:]  / obs_err_std[i] / np.sqrt(2*marg_factor);
         obs_data_norm [i,:]  = obs_data[i,:]    / obs_err_std[i] / np.sqrt(2*marg_factor);
     
-    if ctrl.isfield('no_err_marg'):
+    if ctrl.isSetTrue('no_err_marg'):
         prior_data_norm = prior_data_norm + np.random.randn(np.shapesize(prior_data_norm));
     
     for i_mc in xrange(0,n_mc):
@@ -112,6 +123,7 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     
     #print weights
     weights = np.exp(-weights)
+    
     #print weights
     ########### post processing  ##################
     
@@ -130,13 +142,30 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     sumWeights[sumWeights< 2 * eps] = 1
     sumWeights.shape = (n_meas[1],1)
     weights        = np.tile(1/sumWeights,(1,n_mc))*weights
+    
+    #avoiding -inf errror when one weight is equal to one
+    dict_out['sumSqrWeights'] = np.sum(weights**2,1)
+    del_idx = dict_out['sumSqrWeights'] > 0.999;
+    n_del = sum(del_idx)
+    if n_del > 0:
+        dict_out['sumSqrWeights'][del_idx] = np.NaN
+        weights[del_idx] = np.NaN
+        if ~ctrl.isSetTrue('no_warning'):
+            print ["### Warning: ", n_del, " measurement realizations deleted ###"]
+    idx_ = np.repeat([True],np.size(del_idx)) 
+    idx_[del_idx] = 0
+    dict_out['ESS'] = 1 / dict_out['sumSqrWeights']
     #print np.shape(np.tile(1/sumWeights,(1,n_mc)))
     #print np.shape(weights)
     #print ['sum', np.sum(weights,1)]
     #print weights
     dict_out['weights'] = weights
-    dict_out['sumSqrWeights'] = np.sum(weights**2,1)
+    
     return dict_out
+
+#########################################################################
+# FUNCITON to calculate the conditional variance                        #
+#########################################################################
 
 def weighted_cond_var(ctrl, dict_weight, targ_data):
     
@@ -144,17 +173,17 @@ def weighted_cond_var(ctrl, dict_weight, targ_data):
     
     sumSqrWeights = dict_weight['sumSqrWeights']
     sumSqrWeights = sumSqrWeights[~np.isnan(sumSqrWeights)]
-    if ctrl.isfield('debug'):
-        print targ_data.shape
+    if ctrl.isSetTrue('debug'):
+        # targ_data.shape
         print np.shape(dict_weight['weights'])
         print np.shape(dict_weight['sumSqrWeights'])
         print sumSqrWeights.shape
     
     out = np.dot(dict_weight['weights'], targ_data.T**2) - np.dot(dict_weight['weights'], targ_data.T)**2 
-    print['size out', np.shape(out)]
-    print out
-    print sumSqrWeights
-    print ['sum squared weights',(1/(1-sumSqrWeights))]
+    #print['size out', np.shape(out)]
+    #print out
+    #print sumSqrWeights
+    #print ['sum squared weights',(1/(1-sumSqrWeights))]
     out = (1/(1-sumSqrWeights)) * out.T
     print out.shape
     return out
@@ -194,7 +223,7 @@ def get_n_splits(ctrl, n_mc,n_meas):
         split.part_end   = np.ones(1) * n_meas;
         split.n_part     = np.ones(1) * n_meas;
         
-    if ctrl.isfield('debug'):
+    if ctrl.isSetTrue('debug'):
         print split.part_start
         print split.part_end
         print split.n_part
