@@ -87,6 +87,10 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     else:
         marg_factor = 2; # additional smoothing of the likelood function by factor of 2
     
+    if not(ctrl.isfield('cal_meth')):
+        ctrl.cal_meth = 1
+        print "method set to one"
+    
     ## INIT
     n_data = np.shape(prior_data);
     n_meas = np.shape(obs_data);
@@ -121,12 +125,17 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     if ctrl.isSetTrue('no_err_marg'):
         prior_data_norm = prior_data_norm + np.random.randn(np.shapesize(prior_data_norm));
     
-    for i_mc in xrange(0,n_mc):
+    if ctrl.cal_meth == 1:
+        for i_mc in xrange(0,n_mc):
+            for i_data in xrange(0,n_dim):
+                weights[:,i_mc] = weights[:,i_mc] + ((prior_data_norm[i_data,i_mc]-obs_data_norm[i_data,:])**2)
+                
+    if ctrl.cal_meth == 2:
         for i_data in xrange(0,n_dim):
-            weights[:,i_mc] = weights[:,i_mc] + ((prior_data_norm[i_data,i_mc]-obs_data_norm[i_data,:])**2)
+            weights = weights + (np.tile(prior_data_norm[i_data,0:n_mc],(n_meas[1],1)) - np.tile(obs_data_norm[i_data:i_data+1,:].T,(1,n_mc)))**2   
     
     #print weights
-    weights = np.exp(-weights)
+    weights = ne.evaluate("exp(-weights)")
     
     #print weights
     ########### post processing  ##################

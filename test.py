@@ -6,14 +6,11 @@ from mpl_toolkits.mplot3d import Axes3D
 import predia as pr
 import cstruct as cs
 from time import time as ti
-import os
-    
-os.system("taskset -p 0xff %d" % os.getpid())
     
 ctrl = cs.cstruct(); # control structure used in the subfunction of predia            
-ctrl.debug = 1;
+ctrl.debug = 0;
 ctrl.generate = 1
-n_mc = 200000
+
 
 ion()
 if ctrl.isSetTrue('generate'):
