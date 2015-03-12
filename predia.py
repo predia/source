@@ -1,6 +1,7 @@
 def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_std):
 
     import numpy as np
+    
     # WRAPPER:
     # Evalulation of the expected conditional variance of the prediction data
     # for prior data given the observation data
@@ -34,26 +35,28 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
     #if not(ctrl.isfield('n_para')
     #    ctrl.n_para = 1; % no paralell computing
     
-    split = get_n_splits(ctrl,n_data[1],n_meas[1])
+    (n_split,split_start,split_end,s_part) = get_n_splits(ctrl,n_data[1],n_meas[1])
+    
+    if ctrl.isSetTrue('debug') and n_split > 1:
+        print(['splitting in ', n_split, ' pieces'])
+        print ['slice start', split_start]
+        print ['slice end  ', split_end]
+        print ['slice size ', s_part]
 
     cond_var = np.zeros(n_meas)
-        
-    for t in xrange(0,split.n_):
-        #print split.part_start[t]
-        obs_data_part = obs_data[:,split.part_start[t]:split.part_end[t]];
-        
+    
+    for t in xrange(0,n_split):
+        #print split_start[t]
+        obs_data_part = obs_data[:,split_start[t]:split_end[t]];
         # calculation of the weight matrix
         dict_out = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
-        
-        cond_var[split.part_start[t]:split.part_end[t]] = weighted_cond_var(ctrl, dict_out, pred_data);
+        cond_var[0,split_start[t]:split_end[t]] = weighted_cond_var(ctrl, dict_out, pred_data);
     
     cond_var = cond_var[~np.isnan(cond_var)];
     E_cond_var = np.mean(cond_var);
     
     if np.min(dict_out['ESS']) < ctrl.warn_ESS:
         n_crit = np.sum(dict_out['ESS'] < ctrl.warn_ESS)
-        print n_crit
-        print ["shape of n_crit", n_crit]
         if ~ctrl.isSetTrue('no_warning'):
             print "ESS lower than ", np.str(ctrl.warn_ESS), " in ", np.str((np.float(n_crit)/np.float(n_meas[1])*100)), "% of obs. realizations"
         
@@ -65,6 +68,7 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
 def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     
     import numpy as np
+    import numexpr as ne
     
     if np.rank(prior_data) < 2:
         prior_data = np.array(prior_data)
@@ -119,7 +123,7 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     
     for i_mc in xrange(0,n_mc):
         for i_data in xrange(0,n_dim):
-            weights[:,i_mc] = weights[:,i_mc] + ((prior_data_norm[i_data,i_mc]-obs_data_norm[i_data,:])**2);
+            weights[:,i_mc] = weights[:,i_mc] + ((prior_data_norm[i_data,i_mc]-obs_data_norm[i_data,:])**2)
     
     #print weights
     weights = np.exp(-weights)
@@ -185,7 +189,7 @@ def weighted_cond_var(ctrl, dict_weight, targ_data):
     #print sumSqrWeights
     #print ['sum squared weights',(1/(1-sumSqrWeights))]
     out = (1/(1-sumSqrWeights)) * out.T
-    print out.shape
+    print ['shape cond_var: ', out.shape]
     return out
     
 
@@ -193,41 +197,36 @@ def weighted_cond_var(ctrl, dict_weight, targ_data):
 # FUNCITON to calculate how often the predia matrix needs to be devided #
 #########################################################################
 def get_n_splits(ctrl, n_mc,n_meas):
-
-    class simpl_stuct:
-        pass
-     
-    split = simpl_stuct()
-    
+  
     import os, math
     import numpy as np
 
     mem_bytes = float(os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES'))
-    split.n_ = int(math.ceil((8 * n_mc * n_meas *6) / mem_bytes));
+    n_split = int(math.ceil((8 * n_mc * n_meas *6) / mem_bytes));
 
-    if split.n_ < 1:
+    if n_split > 1:
 
-        n_tmp = math.floor(n_meas[1]/split.n_)
-        split.part_start = np.zeros([split.n_])
-        split.part_end   = np.ones([split.n_]) * n_tmp
-        split.n_part     = np.ones([split.n_]) * n_tmp
-        for t in xrange(1,split.n_-1):
-            split.part_start[t] = split.part_end[t-1]+1
-            if t == split.n_-1:
-                split.part_end[t] = n_meas[1]
+        n_tmp = math.floor(n_meas/n_split)
+        split_start = np.zeros([n_split])
+        split_end   = np.ones([n_split]) * n_tmp
+        s_part     = np.ones([n_split]) * n_tmp
+        for t in xrange(1,n_split):
+            split_start[t] = split_end[t-1]
+            if t == n_split-1:
+                split_end[t] = n_meas
             else:
-                split.part_end[t] = part_end[t-1] + split
+                split_end[t] = split_end[t-1] + split
 
     else:
-        split.part_start = np.zeros(1);
-        split.part_end   = np.ones(1) * n_meas;
-        split.n_part     = np.ones(1) * n_meas;
+        split_start = np.zeros(1);
+        split_end   = np.ones(1) * n_meas;
+        s_part     = np.ones(1) * n_meas;
         
     if ctrl.isSetTrue('debug'):
-        print split.part_start
-        print split.part_end
-        print split.n_part
+        print split_start
+        print split_end
+        print s_part
                 
-    return split
+    return (n_split,split_start,split_end,s_part)
     
 
