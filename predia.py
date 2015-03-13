@@ -43,7 +43,7 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
         print ['slice end  ', split_end]
         print ['slice size ', s_part]
 
-    cond_var = np.zeros(n_meas)
+    cond_var = np.zeros((1,n_meas[1]))
     
     for t in xrange(0,n_split):
         #print split_start[t]
@@ -120,6 +120,7 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     # normalization with error standart deviation    
     for i in xrange(0,n_dim):
         prior_data_norm[i,:] = prior_data[i,:]  / obs_err_std[i] / np.sqrt(2*marg_factor);
+        print obs_err_std[i]
         obs_data_norm [i,:]  = obs_data[i,:]    / obs_err_std[i] / np.sqrt(2*marg_factor);
     
     if ctrl.isSetTrue('no_err_marg'):
