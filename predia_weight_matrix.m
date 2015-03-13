@@ -56,9 +56,9 @@ ttime(1) = cputime -ttime(1);
 ttime(2)= cputime;
 
 % Normalization of data with observation errors
-for i = 1:n_dim
-    prior_data(i,:) = prior_data(i,:)  ./ obs_err_std(i) ./ sqrt(2*marg_factor);
-    obs_data (i,:)  = obs_data(i,:)    ./ obs_err_std(i) ./ sqrt(2*marg_factor);
+for i_data = 1:n_dim
+    prior_data(i_data,:) = prior_data(i_data,:)  ./ obs_err_std(i_data) ./ sqrt(2*marg_factor);
+    obs_data (i_data,:)  = obs_data(i_data,:)    ./ obs_err_std(i_data) ./ sqrt(2*marg_factor);
 end
 
 if strct_flag_check(ctrl,'no_err_marg')
@@ -68,9 +68,9 @@ if strct_flag_check(ctrl,'no_err_marg')
     
 end
 
-for j=1:n_mc
-    for i=1:n_dim
-        weights(:,j) = weights(:,j) + ((prior_data(i,j)-obs_data(i,:)).^2)';
+for i_mc=1:n_mc
+    for i_data=1:n_dim
+        weights(:,i_mc) = weights(:,i_mc) + ((prior_data(i_data,i_mc)-obs_data(i_data,:)).^2)';
     end
 end
 
