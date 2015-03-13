@@ -3,7 +3,7 @@
 % This file show how the internal predia files are used in a test example.
 
 clear all
-n_mc = 50000;
+n_mc = 20000;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SIMPLE NON LINEAR MODEL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,8 +19,8 @@ input(10,:) =randn(1,n_mc);
 
 % inputs are observable quanties, for which an measurement error needs to
 % be defined for the latter data worth analysis
-meas_err_std(1:4)  = 0.8
-meas_err_std(5:10) = 0.3
+meas_err_std(1:4)  = 0.8;
+meas_err_std(5:10) = 0.3;
 
 % model prediction
 output = (input(1,:)+1).^2 - (.5 .* input(7,:) + randn(1,n_mc).* .25).^3 + randn(1,n_mc).* 0.2;
@@ -29,12 +29,22 @@ output = (input(1,:)+1).^2 - (.5 .* input(7,:) + randn(1,n_mc).* .25).^3 + randn
     figure(1)
     clf
     hold on
+    n_plot = 1000;
 for i = 1:10
 
-    scatter(input(11-i,:),output)
+    scatter(input(11-i,1:n_plot),output(1:n_plot))
 end
 
-[X1,X2] = meshgrid(-5:.1:5,-5:.1:5)
+[X1,X2] = meshgrid(-5:.1:5,-5:.1:5);
+
+fid_out = fopen('input.data','w');
+fwrite(fid_out,input(:),'double');
+fclose(fid_out);
+
+fid_out = fopen('output.data','w');
+fwrite(fid_out,output,'double');
+fclose(fid_out);
+
 %%
 figure(4)
 clf
@@ -61,7 +71,9 @@ prior_var = var(output);
 
 % Evaluation of the posterior variance of the model output conditional on the input data 1 to 10
 for i= 1:10
+    tic
     [cond_var(i),ESS] = expect_cond_var_predia(ctrl, input(i,:),input(i,1:2000), meas_err_std(i),output);
+    toc
 end
 
 % Plotting
@@ -74,12 +86,16 @@ ylabel('variance reduction')
 legend('one obs.')
 grid on
 
+
+
 %% two measurements
 
 
 for i= 1:10
+    tic
     comb_input = input([1 i],:);  % fixed first observation in combination of any other observations
     [cond_var_comb2(i),ESS] = expect_cond_var_predia(ctrl, comb_input ,comb_input(:,1:2000), meas_err_std([1,i]) ,output);
+    toc
 end
 
 figure(2)
@@ -90,3 +106,14 @@ xlabel('given input')
 ylabel('variance reduction')
 
 legend({'one obs.','two obs.'})
+
+return
+%%
+
+[weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl,comb_input(:,1:10),comb_input(:,1:2), meas_err_std([1,i]))
+weights
+tmp_cond_var = weighted_cond_var(ctrl, weights,sumSqrWeights,output(1:10))
+
+
+[weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl,comb_input(:,1:20000),comb_input(:,1:2000), meas_err_std([1,i]));
+mean(weighted_cond_var(ctrl, weights,sumSqrWeights,output(1:20000)))
