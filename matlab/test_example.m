@@ -2,8 +2,15 @@
 
 % This file show how the internal predia files are used in a test example.
 
-main_path = pwd;
-addpath([main_path ':' main_path '/aux']);
+if isunix
+    main_path = pwd;    
+    addpath([main_path ':' main_path '/aux']);
+elseif ispc
+    addpath ('aux\')
+end
+
+
+return
 clear all
 n_mc = 20000;
 

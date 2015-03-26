@@ -45,7 +45,7 @@ if n_dim_data ~= n_dim_obs
     error('Dimension of data disagree')
 end
 
-if ~strct_flag_check(ctrl,'n_para')
+if ~strct_bool_check(ctrl,'n_para')
     ctrl.n_para = 1; % no paralell computing
 end
 

@@ -5,8 +5,13 @@ function [n_split, part_start, part_end, n_part] = get_n_splits(ctrl,n_mc,n_meas
 %   to estimat how often the weighting file in PREDIA needs to be split in
 %   order to fit in the memory of the local machine
 if ~isfield(ctrl,'sys')
+    if isunix
     [~, memory] = system('cat /proc/meminfo | grep MemTotal');
     memory = str2double(memory(14:end-3))*1000; % in bytes
+    elseif ispc
+       [user sys] = memory;
+       memory = user.MemAvailableAllArrays;
+    end
 else
     memory = ctrl.sys.memory;
 end

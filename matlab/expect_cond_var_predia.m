@@ -42,7 +42,7 @@ if n_dim_data ~= n_dim_obs
     error('Dimension of data disagree')
 end
 
-if ~strct_flag_check(ctrl,'n_para')
+if ~strct_bool_check(ctrl,'n_para')
     ctrl.n_para = 1; % no paralell computing
 end
 
@@ -50,6 +50,9 @@ end
 % to match the computer memory
 [n_split, part_start, part_end, n_part] = get_n_splits(ctrl, n_mc,n_meas,ctrl.n_para);
 
+if n_split > 1
+    disp(['splitting in ' num2str(n_split) ' pieces'])
+end
 
 %% Calculation loop
 for t = 1:n_split
@@ -69,7 +72,7 @@ E_cond_var = mean(cond_var);
 
 if min(ESS) < ctrl.warn_ESS
     n_crit = sum(ESS < ctrl.warn_ESS);
-    if ~strct_flag_check(ctrl,'no_warning')
+    if ~strct_bool_check(ctrl,'no_warning')
         warning(['ESS lower than ' num2str(ctrl.warn_ESS) ' in ' num2str(n_crit/n_meas*100) '% of obs. realizations'])
     end
 end

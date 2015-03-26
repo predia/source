@@ -28,7 +28,7 @@ function [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;
 
-if strct_flag_check(ctrl,'no_err_marg')
+if strct_bool_check(ctrl,'no_err_marg')
     marg_factor = 1; % no additional smoothing of the likelood function
 else
     marg_factor = 2; % additional smoothing of the likelood function by factor of 2
@@ -38,7 +38,7 @@ end
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
 
-if strct_flag_check(ctrl,'n_mc')
+if strct_bool_check(ctrl,'n_mc')
    n_mc = ctrl.n_mc;
 end
 
@@ -61,7 +61,7 @@ for i_data = 1:n_dim
     obs_data (i_data,:)  = obs_data(i_data,:)    ./ obs_err_std(i_data) ./ sqrt(2*marg_factor);
 end
 
-if strct_flag_check(ctrl,'no_err_marg')
+if strct_bool_check(ctrl,'no_err_marg')
     % adding measurement error in the simulated values in case that not
     % marinalized analytically
     prior_data = prior_data + randn(size(prior_data));
@@ -107,7 +107,7 @@ n_del = sum(del_idx);
 if n_del > 0
     sumSqrWeights(del_idx) = NaN;
     weights(del_idx,:) = NaN;
-    if ~strct_flag_check(ctrl,'no_warning')
+    if ~strct_bool_check(ctrl,'no_warning')
         warning(['### Warning: ' num2str(n_del) ' measurement realizations deleted ###'])
     end
 end
