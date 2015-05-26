@@ -1,4 +1,4 @@
-function [E_cond_var,ESS] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,pred_err_std)
+function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,prior_weight)
 % version 1 / Jan 15 / AGeiges WNowak
 
 % WRAPPER:
@@ -60,7 +60,7 @@ for t = 1:n_split
     obs_data_part = obs_data(:,part_start(t):part_end(t));
     
     % calculation of weighting matrix
-    [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
+    [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std,prior_weight);
     
     % calculation of weighted variance
     cond_var(part_start(t):part_end(t))      = weighted_cond_var(ctrl, weights,sumSqrWeights,pred_data,'weights');

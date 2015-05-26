@@ -1,4 +1,4 @@
-function [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std)
+function [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std,prior_weight)
 
 % CORE EVALUATON OF THE WEIGHTING MATRIX
 
@@ -77,6 +77,10 @@ end
 % Singel call of the exponent
 weights   = exp(-weights);
 
+% incoprporation of prior weighting
+if ~isempty(prior_weight)
+    weights = weights .* repmat(prior_weight,n_meas,1);
+end
 
 ttime(2) = cputime - ttime(2);
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% POSTPROCESSING %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -111,9 +115,9 @@ if n_del > 0
         warning(['### Warning: ' num2str(n_del) ' measurement realizations deleted ###'])
     end
 end
-idx_ = true(size(sumSqrWeights));
-idx_(del_idx) = 0;
-AESS = mean(1./sumSqrWeights(idx_));
+% idx_ = true(size(sumSqrWeights));
+% idx_(del_idx) = 0;
+% AESS = mean(1./sumSqrWeights(idx_));
 ESS  = 1./sumSqrWeights';
 
 ttime(3) = cputime - ttime(3);

@@ -14,9 +14,9 @@ if exist('delete_name','var')
     assignin('caller', delete_name, []);
 end
 
-sumSqrWeights(isnan(sumSqrWeights)) = [];
-if isfield(ctrl,'transposed') && ctrl.transposed
-    varout = (1./(1-sumSqrWeights)) .* ( targ_data.^2 * weight_matrix - ( targ_data* weight_matrix).^2) ;
+
+if strct_bool_check(ctrl,'no_sample_variance') 
+    varout =  weight_matrix *  targ_data.^2' - (weight_matrix *  targ_data').^2;
 else
     varout = repmat((1./(1-sumSqrWeights)),1,size(targ_data,1)) .* ( weight_matrix *  targ_data.^2' - (weight_matrix *  targ_data').^2) ;
 end
