@@ -24,6 +24,18 @@ function [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_
 %
 %                   sample (given data)
 
+%% When using this code please cite the original paper:
+% BIBTeX format:
+%@article{Leube2012,
+%	author = "P. Leube and A. Geiges and W. Nowak",
+%	doi = "10.1029/2010WR010137",
+%	journal = "Water Resources Research",
+%	note = "{W02501}",
+%	number = "2",
+%	title = "{Bayesian assessment of the expected data impact on prediction confidence in optimal sampling design}",
+%	volume = "48",
+%	year = 2012
+%}
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%% INIT %%%%%%%%%%%%%%%%%%%%%%%%%%%
 ttime(1)= cputime;

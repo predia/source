@@ -1,7 +1,9 @@
 function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,prior_weight)
-% version 1 / Jan 15 / AGeiges WNowak
+% Author: Andreas Geiges
+% E-Mail: andreas.geiges@uni-stuttgart.de
+% Date:  05/2015
 
-% WRAPPER:
+%% WRAPPER:
 % Evalulation of the expected conditional variance of the prediction data
 % for prior data given the observation data
 
@@ -29,6 +31,20 @@ function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,ob
 %                   given the observation data sample
 % ESS               Effective sample size for each condition    1:N_MEAS
 %                   sample (given data)
+
+%% When using this code please cite the original paper:
+% BIBTeX format:
+%@article{Leube2012,
+%	author = "P. Leube and A. Geiges and W. Nowak",
+%	doi = "10.1029/2010WR010137",
+%	journal = "Water Resources Research",
+%	note = "{W02501}",
+%	number = "2",
+%	title = "{Bayesian assessment of the expected data impact on prediction confidence in optimal sampling design}",
+%	volume = "48",
+%	year = 2012
+%}
+
 
 %% INIT
 [n_dim_data, n_mc  ] = size(prior_data);

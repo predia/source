@@ -1,7 +1,22 @@
 %% TEST FILE FOR ILLUSTRATION
-
+% Author: Andreas Geiges
+% E-Mail: andreas.geiges@uni-stuttgart.de
+% Date:  05/2015
 % This file show how the internal predia files are used in a test example.
 
+%% When using this code please cite the original paper:
+% BIBTeX format:
+%@article{Leube2012,
+%	author = "P. Leube and A. Geiges and W. Nowak",
+%	doi = "10.1029/2010WR010137",
+%	journal = "Water Resources Research",
+%	note = "{W02501}",
+%	number = "2",
+%	title = "{Bayesian assessment of the expected data impact on prediction confidence in optimal sampling design}",
+%	volume = "48",
+%	year = 2012
+%}
+%%
 if isunix
     main_path = pwd;    
     addpath([main_path ':' main_path '/aux']);
@@ -115,14 +130,3 @@ xlabel('given input')
 ylabel('variance reduction')
 
 legend({'one obs.','two obs.'})
-
-return
-%%
-
-[weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl,comb_input(:,1:10),comb_input(:,1:2), meas_err_std([1,i]))
-weights
-tmp_cond_var = weighted_cond_var(ctrl, weights,sumSqrWeights,output(1:10))
-
-
-[weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl,comb_input(:,1:20000),comb_input(:,1:2000), meas_err_std([1,i]));
-mean(weighted_cond_var(ctrl, weights,sumSqrWeights,output(1:20000)))
