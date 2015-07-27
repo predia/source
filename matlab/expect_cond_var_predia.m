@@ -11,9 +11,9 @@ function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,ob
 % ===================================================================================
 % ctrl              Control structure containing various info   STUCTURE
 %     .no_err_marg  flag if marginalizing over obs errro        1
-%                   (see Leube et al. 2012, WRR)   
+%                   (see Leube et al. 2012, WRR)
 %     .n_para       number of parallel computations for         1
-%                   memory management        
+%                   memory management
 %     .sys.memory   memory of the system in in bytes            1
 %     .warn_ESS     minimal required ESS                        1
 %     .no_warning   do not display convergence warnings         1
@@ -66,13 +66,22 @@ end
 % to match the computer memory
 [n_split, part_start, part_end, n_part] = get_n_splits(ctrl, n_mc,n_meas,ctrl.n_para);
 
-if n_split > 1
+if n_split > 1 && ctrl.n_para == 1
     disp(['splitting in ' num2str(n_split) ' pieces'])
 end
 
 %% Calculation loop
+if n_split > 1 && ctrl.n_para == 1
+    fprintf(['Eval split: 0/' num2str(n_split)])
+end
 for t = 1:n_split
-    
+    if n_split > 1 && ctrl.n_para == 1
+        if num2str(n_split) > 9
+            fprintf(['\b\b\b\b' num2str(t) '/' num2str(n_split)])
+        else
+            fprintf(['\b\b\b' num2str(t) '/' num2str(n_split)])
+        end
+    end
     obs_data_part = obs_data(:,part_start(t):part_end(t));
     
     % calculation of weighting matrix
@@ -82,6 +91,9 @@ for t = 1:n_split
     cond_var(part_start(t):part_end(t))      = weighted_cond_var(ctrl, weights,sumSqrWeights,pred_data,'weights');
     
 end
+if n_split > 1 && ctrl.n_para == 1
+    fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
+end
 
 cond_var = cond_var(~isnan(cond_var));
 E_cond_var = mean(cond_var);
@@ -89,6 +101,6 @@ E_cond_var = mean(cond_var);
 if min(ESS) < ctrl.warn_ESS
     n_crit = sum(ESS < ctrl.warn_ESS);
     if ~strct_bool_check(ctrl,'no_warning')
-        warning(['ESS lower than ' num2str(ctrl.warn_ESS) ' in ' num2str(n_crit/n_meas*100) '% of obs. realizations'])
+        disp(['ESS lower than ' num2str(ctrl.warn_ESS) ' in ' num2str(n_crit/n_meas*100) '% of obs. realizations'])
     end
 end

@@ -16,10 +16,8 @@ else
     memory = ctrl.sys.memory;
 end
 
-% 8 byte per double
-% 4 empiric number to deal with the offset memory use (MIGHT BE IMPROVED)
-
-n_split = ceil((8* poolsize * n_mc * n_meas*6)/ memory);
+emp_factor = 6; % 4 empiric number to deal with the offset memory use (MIGHT BE IMPROVED)
+n_split = ceil((8* poolsize * n_mc * n_meas* emp_factor)/ memory);
 
 if n_split>1
     split = fix(n_meas/n_split);
