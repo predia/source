@@ -90,7 +90,7 @@ end
 weights   = exp(-weights);
 
 % incoprporation of prior weighting
-if ~isempty(prior_weight)
+if exist('prior_weight','var') && ~isempty(prior_weight)
     weights = weights .* repmat(prior_weight,n_meas,1);
 end
 
