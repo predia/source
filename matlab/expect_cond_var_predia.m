@@ -23,7 +23,6 @@ function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,ob
 % obs_err_std       standart deviation of measurement error     DIM:1
 %
 % pred_data         prediction data                             DIM:N_MC
-% pred_err_std      standart deviation of prediction error      DIM:1
 %
 % OUTPUT:           NAME                                        DIMENSION
 % ===================================================================================
@@ -49,6 +48,7 @@ function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,ob
 %% INIT
 [n_dim_data, n_mc  ] = size(prior_data);
 [n_dim_obs  ,n_meas] = size(obs_data);
+[n_dim_pred ,~] = size(pred_data);
 
 if ~isfield(ctrl,'warn_ESS')
     ctrl.warn_ESS = 50;
@@ -70,6 +70,12 @@ if n_split > 1 && ctrl.n_para == 1
     disp(['splitting in ' num2str(n_split) ' pieces'])
 end
 
+if ~exist('prior_weight','var')
+    prior_weight = [];
+end
+
+cond_var = zeros(n_meas,n_dim_pred);
+
 %% Calculation loop
 if n_split > 1 && ctrl.n_para == 1
     fprintf(['Eval split: 0/' num2str(n_split)])
@@ -88,15 +94,15 @@ for t = 1:n_split
     [weights, ESS, sumSqrWeights,ttime] = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std,prior_weight);
     
     % calculation of weighted variance
-    cond_var(part_start(t):part_end(t))      = weighted_cond_var(ctrl, weights,sumSqrWeights,pred_data,'weights');
+    cond_var(part_start(t):part_end(t),:)      = weighted_cond_var(ctrl, weights,sumSqrWeights,pred_data,'weights');
     
 end
 if n_split > 1 && ctrl.n_para == 1
     fprintf('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b');
 end
 
-cond_var = cond_var(~isnan(cond_var));
-E_cond_var = mean(cond_var);
+cond_var = cond_var(~any(isnan(cond_var),2),:);
+E_cond_var = mean(cond_var,1);
 
 if min(ESS) < ctrl.warn_ESS
     n_crit = sum(ESS < ctrl.warn_ESS);
