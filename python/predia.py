@@ -65,20 +65,20 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
 #########################################################################
 # core FUNCITON to calculate the weighting matrxi                       #
 #########################################################################
-def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
+def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
     
     import numpy as np
     import numexpr as ne
     
-    if np.rank(prior_data) < 2:
+    if np.ndim(prior_data) < 2:
         prior_data = np.array(prior_data)
         prior_data.shape = (1,np.size(prior_data))
         
-    if np.rank(obs_data) < 2:
+    if np.ndim(obs_data) < 2:
         obs_data = np.array(obs_data)
         obs_data.shape = (1,np.size(obs_data))
     
-    if np.rank(obs_err_std) < 2:
+    if np.ndim(obs_err_std) < 2:
         obs_err_std = np.array(obs_err_std)
         obs_err_std.shape = (1,np.size(obs_err_std))
             
@@ -105,7 +105,6 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
         raise Exception('Dimension of data disagree')
     else:
         n_dim = n_data[0]
-
     weights = np.zeros((n_meas[1],n_mc))
 
 ########### main calculation ##################
@@ -119,9 +118,9 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
         
     # normalization with error standart deviation    
     for i in xrange(0,n_dim):
-        prior_data_norm[i,:] = prior_data[i,:]  / obs_err_std[i] / np.sqrt(2*marg_factor);
-        print obs_err_std[i]
-        obs_data_norm [i,:]  = obs_data[i,:]    / obs_err_std[i] / np.sqrt(2*marg_factor);
+        prior_data_norm[i,:] = prior_data[i,:]  / obs_err_std[0,i] / np.sqrt(2*marg_factor);
+        #print obs_err_std[0,i]
+        obs_data_norm [i,:]  = obs_data[i,:]    / obs_err_std[0,i] / np.sqrt(2*marg_factor);
     
     if ctrl.isSetTrue('no_err_marg'):
         prior_data_norm = prior_data_norm + np.random.randn(np.shapesize(prior_data_norm));
@@ -137,6 +136,11 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std):
     
     #print weights
     weights = ne.evaluate("exp(-weights)")
+    
+    # incpoporate prior weights
+    if aux_data.has_key('prior_weights'):
+         weights = weights * np.tile(aux_data['prior_weights'],[n_meas[1],1])
+        
     
     #print weights
     ########### post processing  ##################
@@ -199,7 +203,7 @@ def weighted_cond_var(ctrl, dict_weight, targ_data):
     #print sumSqrWeights
     #print ['sum squared weights',(1/(1-sumSqrWeights))]
     out = (1/(1-sumSqrWeights)) * out.T
-    print ['shape cond_var: ', out.shape]
+    #print ['shape cond_var: ', out.shape]
     return out
     
 

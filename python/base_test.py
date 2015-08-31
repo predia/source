@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/geiges/python/aux') 
+
 from cstruct import *
 from predia import *
 import numpy as np
