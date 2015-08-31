@@ -117,8 +117,9 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
     for i in xrange(0,n_dim):
         prior_data[i,:] /= (obs_err_std[0,i] * np.sqrt(2*marg_factor));
         #print obs_err_std[0,i]
-        obs_data [i,:]  /= (obs_err_std[0,i] / np.sqrt(2*marg_factor));
-    
+        obs_data [i,:]  /= (obs_err_std[0,i] * np.sqrt(2*marg_factor));
+
+        
     if ctrl.isSetTrue('no_err_marg'):
         prior_data += np.random.randn(np.shapesize(prior_data));
     
@@ -127,8 +128,10 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
             for i_data in xrange(0,n_dim):
                 weights[:,i_mc] += ((prior_data[i_data,i_mc]-obs_data[i_data,:])**2)
                 
+                
     if ctrl.cal_meth == 2:
         for i_data in xrange(0,n_dim):
+            
             # ALT 1 (fastest)
             aa = np.tile(prior_data[i_data,0:n_mc],(n_meas[1],1))
             bb = np.tile(obs_data[i_data:i_data+1,:].T,(1,n_mc))
