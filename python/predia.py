@@ -113,35 +113,57 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
         print prior_data.shape
         print [obs_err_std, obs_err_std.shape]
     
-    prior_data_norm = np.zeros(np.shape(prior_data))
-    obs_data_norm   = np.zeros(np.shape(obs_data))
-        
     # normalization with error standart deviation    
     for i in xrange(0,n_dim):
-        prior_data_norm[i,:] = prior_data[i,:]  / obs_err_std[0,i] / np.sqrt(2*marg_factor);
+        prior_data[i,:] /= (obs_err_std[0,i] * np.sqrt(2*marg_factor));
         #print obs_err_std[0,i]
-        obs_data_norm [i,:]  = obs_data[i,:]    / obs_err_std[0,i] / np.sqrt(2*marg_factor);
+        obs_data [i,:]  /= (obs_err_std[0,i] / np.sqrt(2*marg_factor));
     
     if ctrl.isSetTrue('no_err_marg'):
-        prior_data_norm = prior_data_norm + np.random.randn(np.shapesize(prior_data_norm));
+        prior_data += np.random.randn(np.shapesize(prior_data));
     
     if ctrl.cal_meth == 1:
         for i_mc in xrange(0,n_mc):
             for i_data in xrange(0,n_dim):
-                weights[:,i_mc] = weights[:,i_mc] + ((prior_data_norm[i_data,i_mc]-obs_data_norm[i_data,:])**2)
+                weights[:,i_mc] += ((prior_data[i_data,i_mc]-obs_data[i_data,:])**2)
                 
     if ctrl.cal_meth == 2:
         for i_data in xrange(0,n_dim):
-            weights = weights + (np.tile(prior_data_norm[i_data,0:n_mc],(n_meas[1],1)) - np.tile(obs_data_norm[i_data:i_data+1,:].T,(1,n_mc)))**2   
-    
+            # ALT 1 (fastest)
+            aa = np.tile(prior_data[i_data,0:n_mc],(n_meas[1],1))
+            bb = np.tile(obs_data[i_data:i_data+1,:].T,(1,n_mc))
+            weights += ne.evaluate("(aa - bb)**2")   
+            
+            # ALT 2
+            #weights += (np.tile(prior_data_norm[i_data,0:n_mc],(n_meas[1],1)) - np.tile(obs_data_norm[i_data:i_data+1,:].T,(1,n_mc)))**2
+            
+    if ctrl.cal_meth == 3:
+        for i_mc in xrange(0,n_mc):
+            aa = np.subtract(prior_data[:,i_mc],obs_data.T)
+            weights[:,i_mc] = ne.evaluate("sum(aa**2,axis=1)")
+        
     #print weights
+    
+    # ALT 1
+    #weights = np.exp(-weights)
+    
+    # ALT 2 (fastest)
     weights = ne.evaluate("exp(-weights)")
     
     # incpoporate prior weights
     if aux_data.has_key('prior_weights'):
-         weights = weights * np.tile(aux_data['prior_weights'],[n_meas[1],1])
         
-    
+        # ALT 1
+        #weights = weights * np.tile(aux_data['prior_weights'],[n_meas[1],1])
+        
+        # ALT 2 (fastest)
+        for i_meas in xrange(0,n_meas[1]+1):
+            weights[i_meas-1:i_meas,:] *= aux_data['prior_weights']
+        
+        # ALT 3
+        #a = np.tile(aux_data['prior_weights'],[n_meas[1],1])
+        #weights = ne.evaluate("weights * a")
+        
     #print weights
     ########### post processing  ##################
     
