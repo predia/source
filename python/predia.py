@@ -1,4 +1,9 @@
-def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_std):
+def expected_cond_var_vectorized(vector_data):
+    # unpack data    
+    (ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_std, aux_data) = vector_data
+    return expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_std, aux_data)
+
+def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_std, aux_data):
 
     import numpy as np
     
@@ -6,15 +11,15 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
     # Evalulation of the expected conditional variance of the prediction data
     # for prior data given the observation data
     
-    if np.size(prior_data.shape) == 1:
+    if np.ndim(prior_data) == 1:
         length = np.size(prior_data)
         prior_data.shape = (1,length)
         
-    if np.size(obs_data.shape) == 1:
+    if np.ndim(obs_data) == 1:
         length = np.size(obs_data)
         obs_data.shape = (1,length)
         
-    if np.size(pred_data.shape) == 1:
+    if np.ndim(pred_data) == 1:
         length = np.size(pred_data)
         pred_data.shape = (1,length)
     
@@ -27,7 +32,7 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
         print n_meas
     
     if not(ctrl.isfield('warn_ESS')):
-        ctrl.warn_ESS = 50;
+        ctrl.warn_ESS = 20;
     
     if not(n_data[0] == n_meas[0]):
         raise Exception('Dimension of data disagree')
@@ -43,24 +48,27 @@ def expected_cond_var(ctrl,prior_data,obs_data, obs_err_std,pred_data,pred_err_s
         print ['slice end  ', split_end]
         print ['slice size ', s_part]
 
-    cond_var = np.zeros((1,n_meas[1]))
+    cond_var    = np.zeros((1,n_meas[1]))
+    ESS         = np.zeros((1,n_meas[1]))
     
     for t in xrange(0,n_split):
         #print split_start[t]
         obs_data_part = obs_data[:,split_start[t]:split_end[t]];
         # calculation of the weight matrix
-        dict_out = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std);
+        dict_out = predia_weight_matrix(ctrl, prior_data,obs_data_part, obs_err_std, aux_data);
+        
+        ESS[0,split_start[t]:split_end[t]]      = dict_out['ESS']        
         cond_var[0,split_start[t]:split_end[t]] = weighted_cond_var(ctrl, dict_out, pred_data);
-    
+        
     cond_var = cond_var[~np.isnan(cond_var)];
     E_cond_var = np.mean(cond_var);
     
-    if np.min(dict_out['ESS']) < ctrl.warn_ESS:
-        n_crit = np.sum(dict_out['ESS'] < ctrl.warn_ESS)
+    if ESS.min() < ctrl.warn_ESS:
+        n_crit = np.sum(ESS < ctrl.warn_ESS)
         if ~ctrl.isSetTrue('no_warning'):
             print "ESS lower than ", np.str(ctrl.warn_ESS), " in ", np.str((np.float(n_crit)/np.float(n_meas[1])*100)), "% of obs. realizations"
         
-    return E_cond_var
+    return (E_cond_var,cond_var,ESS)
 
 #########################################################################
 # core FUNCITON to calculate the weighting matrxi                       #
@@ -113,27 +121,28 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
         print prior_data.shape
         print [obs_err_std, obs_err_std.shape]
     
-    # normalization with error standart deviation    
+    # normalization with error standart deviation   
+    prior_data_norm = np.zeros(prior_data.shape)
     for i in xrange(0,n_dim):
-        prior_data[i,:] /= (obs_err_std[0,i] * np.sqrt(2*marg_factor));
+        prior_data_norm[i,:] = prior_data[i,:] / (obs_err_std[0,i] * np.sqrt(2*marg_factor));
         #print obs_err_std[0,i]
         obs_data [i,:]  /= (obs_err_std[0,i] * np.sqrt(2*marg_factor));
 
         
     if ctrl.isSetTrue('no_err_marg'):
-        prior_data += np.random.randn(np.shapesize(prior_data));
+        prior_data_norm += np.random.randn(np.shapesize(prior_data));
     
     if ctrl.cal_meth == 1:
         for i_mc in xrange(0,n_mc):
             for i_data in xrange(0,n_dim):
-                weights[:,i_mc] += ((prior_data[i_data,i_mc]-obs_data[i_data,:])**2)
+                weights[:,i_mc] += ((prior_data_norm[i_data,i_mc]-obs_data[i_data,:])**2)
                 
                 
     if ctrl.cal_meth == 2:
         for i_data in xrange(0,n_dim):
             
             # ALT 1 (fastest)
-            aa = np.tile(prior_data[i_data,0:n_mc],(n_meas[1],1))
+            aa = np.tile(prior_data_norm[i_data,0:n_mc],(n_meas[1],1))
             bb = np.tile(obs_data[i_data:i_data+1,:].T,(1,n_mc))
             weights += ne.evaluate("(aa - bb)**2")   
             
@@ -142,8 +151,11 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
             
     if ctrl.cal_meth == 3:
         for i_mc in xrange(0,n_mc):
-            aa = np.subtract(prior_data[:,i_mc],obs_data.T)
-            weights[:,i_mc] = ne.evaluate("sum(aa**2,axis=1)")
+            aa = np.subtract(prior_data_norm[:,i_mc],obs_data.T)
+            if aa.shape[1] == 1:
+                weights[:,i_mc] = ne.evaluate("aa**2")[:,0]
+            else:
+                weights[:,i_mc] = ne.evaluate("sum(aa**2,axis=1)")
         
     #print weights
     
@@ -202,6 +214,11 @@ def predia_weight_matrix(ctrl, prior_data,obs_data, obs_err_std, aux_data):
     #print np.shape(weights)
     #print ['sum', np.sum(weights,1)]
     #print weights
+
+    #if dict_out['ESS'].min() < ctrl.warn_ESS:
+    #    n_crit = (dict_out['ESS'] < ctrl.warn_ESS).sum()
+    #    print 'ESS lower than  {} in {}'.format(n_crit, n_crit/n_meas*100)
+    
     dict_out['weights'] = weights
     
     return dict_out
@@ -215,7 +232,7 @@ def weighted_cond_var(ctrl, dict_weight, targ_data):
     import numpy as np
     
     sumSqrWeights = dict_weight['sumSqrWeights']
-    sumSqrWeights = sumSqrWeights[~np.isnan(sumSqrWeights)]
+    #sumSqrWeights = sumSqrWeights[~np.isnan(sumSqrWeights)]
     if ctrl.isSetTrue('debug'):
         # targ_data.shape
         print np.shape(dict_weight['weights'])
@@ -228,6 +245,7 @@ def weighted_cond_var(ctrl, dict_weight, targ_data):
     #print sumSqrWeights
     #print ['sum squared weights',(1/(1-sumSqrWeights))]
     out = (1/(1-sumSqrWeights)) * out.T
+
     #print ['shape cond_var: ', out.shape]
     return out
     
@@ -239,10 +257,12 @@ def get_n_splits(ctrl, n_mc,n_meas):
   
     import os, math
     import numpy as np
-
-    mem_bytes = float(os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES'))
-    n_split = int(math.ceil((8 * n_mc * n_meas *6) / mem_bytes));
-
+    if not(ctrl.isfield('n_para')):
+        ctrl.n_para = 1 # no paralell computing
+        
+    mem_bytes = float(os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')) / 2
+    n_split = int(math.ceil((8 * n_mc * n_meas *3 * ctrl.n_para) / mem_bytes));
+    n_split =3
     if n_split > 1:
 
         n_tmp = math.floor(n_meas/n_split)
@@ -254,7 +274,7 @@ def get_n_splits(ctrl, n_mc,n_meas):
             if t == n_split-1:
                 split_end[t] = n_meas
             else:
-                split_end[t] = split_end[t-1] + split
+                split_end[t] = split_end[t-1] + n_tmp
 
     else:
         split_start = np.zeros(1);

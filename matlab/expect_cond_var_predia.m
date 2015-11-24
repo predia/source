@@ -1,36 +1,50 @@
 function [E_cond_var,ESS, cond_var] = expect_cond_var_predia(ctrl, prior_data,obs_data, obs_err_std,pred_data,prior_weight)
+
 % Author: Andreas Geiges
 % E-Mail: andreas.geiges@uni-stuttgart.de
-% Date:  05/2015
-
-%% WRAPPER:
+% Date:  11/2015
+%
 % Evalulation of the expected conditional variance of the prediction data
-% for prior data given the observation data
-
+% (pred_data) for non-linear Bayesian update of the prior data (prior_data) for a set of 
+% given observations (obs_data)
+% 
+% SYNTAX:
+% [E_cond_var,ESS, cond_var] = EXPECT_COND_VAR_PREDIA(ctrl, prior_data,obs_data, obs_err_std,pred_data,prior_weight)
+%
+% ctrl is required, but can be empty ctrl = [];
+% [E_cond_var,ESS, cond_var] = EXPECT_COND_VAR_PREDIA([], prior_data,obs_data, obs_err_std,pred_data,prior_weight)
+%
 % INPUT:            NAME                                        DIMENSION
 % ===================================================================================
-% ctrl              Control structure containing various info   STUCTURE
-%     .no_err_marg  flag if marginalizing over obs errro        1
-%                   (see Leube et al. 2012, WRR)
-%     .n_para       number of parallel computations for         1
-%                   memory management
-%     .sys.memory   memory of the system in in bytes            1
-%     .warn_ESS     minimal required ESS                        1
-%     .no_warning   do not display convergence warnings         1
+% ctrl              Control structure containing various info           STUCTURE
+%     .no_err_marg  flag to surpress marginalizing over observation     1
+%                   error (see Leube et al. 2012, WRR)       
+%                   (default = 0)
+%     .n_para       number of parallel computations for memory          1
+%                   management
+%                   (default = 1)
+%     .sys.memory   memory of the system in in bytes                    1
+%     .warn_ESS     minimal effective sample size of posterior that     1
+%                   is acceptable, below gives warning.
+%                   (default = 50)
+%     .no_warning   do not display convergence warnings                 1
+%                   (default = false)
 %
-% prior_data        data sample                                 DIM:N_MC
-% obs_data          sample of observations                      DIM:N_MEAS
-% obs_err_std       standart deviation of measurement error     DIM:1
+% prior_data        data sample                                         DIM:N_MC
+% obs_data          sample of observations                              DIM:N_MEAS
+% obs_err_std       standart deviation of measurement error             DIM:1
 %
-% pred_data         prediction data                             DIM:N_MC
+% pred_data         prediction data                                     DIM:N_MC
 %
-% OUTPUT:           NAME                                        DIMENSION
+% OUTPUT:           NAME                                                DIMENSION
 % ===================================================================================
-% E_cond_var        expected conditional prediction variance    1:N_MEAS
+% E_cond_var        expected conditional prediction variance            1   
 %                   given the observation data sample
-% ESS               Effective sample size for each condition    1:N_MEAS
+% ESS               Effective sample size for each condition            1:N_MEAS
 %                   sample (given data)
-
+% cond_var          conditional prediction variance for each            1:N_MEAS
+%                   observation realization
+%
 %% When using this code please cite the original paper:
 % BIBTeX format:
 %@article{Leube2012,
